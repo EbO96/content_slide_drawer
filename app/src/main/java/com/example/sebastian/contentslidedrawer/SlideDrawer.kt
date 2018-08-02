@@ -189,44 +189,52 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     fun isOpen() = cfg.isOpen
 
     fun open() {
-        contentView?.apply {
-            if (openAnimationX == null || openAnimationY == null) {
-                if (openAnimationX == null)
-                    openAnimationX = ObjectAnimator.ofFloat(contentWrapper, "translationX", 0f, cfg.screenWidth)
-                if (openAnimationY == null)
-                    openAnimationY = ObjectAnimator.ofFloat(contentWrapper, "translationY", 0f, cfg.screenHeight)
+        if (!cfg.isOpen) {
+            contentView?.apply {
+                if (openAnimationX == null || openAnimationY == null) {
+                    if (openAnimationX == null)
+                        openAnimationX = ObjectAnimator.ofFloat(contentWrapper, "translationX", 0f, cfg.screenWidth)
+                    if (openAnimationY == null)
+                        openAnimationY = ObjectAnimator.ofFloat(contentWrapper, "translationY", 0f, cfg.screenHeight)
+                }
+                animSetOpen.apply {
+                    end()
+                    interpolator = LinearInterpolator()
+                    duration = cfg.duration
+                    playTogether(openAnimationX, openAnimationY)
+                    start()
+                    showCloseButton()
+                    showMenuList()
+                }
+
+                cfg.isOpen = true
             }
-            animSetOpen.apply {
-                end()
-                interpolator = LinearInterpolator()
-                duration = cfg.duration
-                playTogether(openAnimationX, openAnimationY)
-                start()
-                showCloseButton()
-                showMenuList()
-            }
-            cfg.isOpen = true
         }
     }
 
-    fun close() {
-        contentView?.apply {
-            if (closeAnimationX == null || closeAnimationY == null) {
-                if (closeAnimationX == null)
-                    closeAnimationX = ObjectAnimator.ofFloat(contentWrapper, "translationX", cfg.screenWidth, 0f)
-                if (closeAnimationY == null)
-                    closeAnimationY = ObjectAnimator.ofFloat(contentWrapper, "translationY", cfg.screenHeight, 0f)
+    fun close(end: (() -> Unit)? = null) {
+        if (cfg.isOpen) {
+            contentView?.apply {
+                if (closeAnimationX == null || closeAnimationY == null) {
+                    if (closeAnimationX == null)
+                        closeAnimationX = ObjectAnimator.ofFloat(contentWrapper, "translationX", cfg.screenWidth, 0f)
+                    if (closeAnimationY == null)
+                        closeAnimationY = ObjectAnimator.ofFloat(contentWrapper, "translationY", cfg.screenHeight, 0f)
+                }
+                animSetClose.apply {
+                    end()
+                    interpolator = LinearInterpolator()
+                    duration = cfg.duration
+                    playTogether(closeAnimationX, closeAnimationY)
+                    start()
+                    hideCloseButton()
+                    hideMenuList()
+                }
+                animSetClose.endAnimationListener {
+                    end?.let { it1 -> it1() }
+                }
+                cfg.isOpen = false
             }
-            animSetClose.apply {
-                end()
-                interpolator = LinearInterpolator()
-                duration = cfg.duration
-                playTogether(closeAnimationX, closeAnimationY)
-                start()
-                hideCloseButton()
-                hideMenuList()
-            }
-            cfg.isOpen = false
         }
     }
 
@@ -270,7 +278,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     }
 
     fun setMenu(vararg drawerMenuItem: DrawerMenuItem, globalMenuTheme: GlobalMenuTheme? = null) {
-        setMenuItems(drawerMenuItem.asList() as ArrayList<DrawerMenuItem>, globalMenuTheme)
+        setMenuItems(ArrayList(drawerMenuItem.asList()), globalMenuTheme)
     }
 
     fun setMenuItemClickListener(menuItemsClickListener: MenuItemsClickListener?) {
@@ -334,7 +342,25 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         return this
     }
 
-    private fun <T : View> CreatedView.findView(id: String) = this.view.findViewById<T>(ids[id] ?: -1)
+    private fun AnimatorSet.endAnimationListener(end: (Animator?) -> Unit) {
+        this.addListener(object : Animator.AnimatorListener {
+            override fun onAnimationEnd(p0: Animator?) {
+                end(p0)
+            }
+
+            override fun onAnimationRepeat(p0: Animator?) {
+            }
+
+            override fun onAnimationCancel(p0: Animator?) {
+            }
+
+            override fun onAnimationStart(p0: Animator?) {
+            }
+        })
+    }
+
+    private fun <T : View> CreatedView.findView(id: String) = this.view.findViewById<T>(ids[id]
+            ?: -1)
 
     private fun Int.dp() = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
@@ -430,9 +456,12 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                         setOnClickListener {
                             if (theme.selectableMenuItems == true)
                                 selectItem(position)
-                            menuItemsClickListener?.onClick(position, drawerMenuItem)
                             if (cfg.closeAfterItemClick)
-                                close()
+                                close {
+                                    menuItemsClickListener?.onClick(position, drawerMenuItem)
+                                }
+                            else menuItemsClickListener?.onClick(position, drawerMenuItem)
+
                         }
                     }
                 }
@@ -569,20 +598,21 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                     weight = 5f
                 }
 
-                val imageView = ImageView(context).apply {
+                val closeButton = ImageView(context).apply {
                     closeButtonId = View.generateViewId()
                     id = closeButtonId
                     setImageDrawable(closeButtonDrawable) //TODO draw close button
                     layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                        setPadding(16, 16, 16, 16)
                         contentDescription = "Close menu drawer"
+                        setMargins(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                        setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
                         addRule(RelativeLayout.ALIGN_PARENT_TOP)
                         addRule(RelativeLayout.ALIGN_PARENT_LEFT)
                         addRule(RelativeLayout.ALIGN_PARENT_START)
                     }
                 }
 
-                addView(imageView, 0)
+                addView(closeButton, 0)
 
                 val titleTextView = TextView(context).apply {
                     drawerTitleId = ID()
@@ -590,7 +620,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
                     setTextColor(theme.closeIconColor)
                     layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                        setPadding(16, 16, 16, 16)
+                        setPadding(16.dp(), 12.dp(), 16.dp(), 16.dp())
                         addRule(RelativeLayout.ALIGN_PARENT_TOP)
                         addRule(RelativeLayout.CENTER_HORIZONTAL)
                     }
