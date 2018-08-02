@@ -13,6 +13,7 @@ class MainActivity : AppCompatActivity() {
 
         slideDrawer({
             itemsDividerEnabled = true
+            drawerTitle = "Spis treści"
         }, {
 
             getContentView()?.setOnClickListener {
@@ -25,12 +26,6 @@ class MainActivity : AppCompatActivity() {
                 add(SlideDrawer.DrawerMenuItem("element 3", "subtitle 3"))
                 add(SlideDrawer.DrawerMenuItem("element 4", "subtitle 4"))
                 add(SlideDrawer.DrawerMenuItem("element 5", "subtitle 5"))
-                add(SlideDrawer.DrawerMenuItem("element 6", "subtitle 6"))
-                add(SlideDrawer.DrawerMenuItem("element 7", "subtitle 7"))
-                add(SlideDrawer.DrawerMenuItem("element 8", "subtitle 8"))
-                add(SlideDrawer.DrawerMenuItem("element 9", "subtitle 9"))
-                add(SlideDrawer.DrawerMenuItem("element 10", "subtitle 10"))
-                add(SlideDrawer.DrawerMenuItem("element 11", "subtitle 11"))
             })
 
             setMenuItemClickListener(object : SlideDrawer.MenuItemsClickListener {

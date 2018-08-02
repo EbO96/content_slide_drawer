@@ -11,7 +11,6 @@ import android.graphics.PorterDuff
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.Gravity
@@ -50,11 +49,11 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     private val drawerRootViewId = "1"
     private val closeButtonViewId = "2"
     private val recyclerViewId = "3"
-    //Menu item const
     private val itemIconViewId = "4"
     private val itemTitleViewId = "5"
     private val itemSubtitleViewId = "6"
     private val itemViewId = "7"
+    private val drawerTitleTextViewId = "8"
 
     /*
     XML attributes
@@ -62,19 +61,20 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     private val attr = context?.obtainStyledAttributes(attrs, R.styleable.SlideDrawer)
 
     /*
-    ViewCreator
-     */
-    private val viewCreator = ViewCreator()
-
-    /*
     Config
-     */
+  */
     private val cfg: Config
 
     /*
     Theme
      */
-    private val theme: Theme?
+    private val theme = Theme()
+
+    /*
+    ViewCreator
+   */
+    private val viewCreator = ViewCreator()
+    private val mDrawerView = viewCreator.createDrawerView()
 
     /*
     Menu
@@ -87,9 +87,11 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
      */
     private var contentWrapper = FrameLayout(context)
     private var contentView: View? = attr?.getResourceId(R.styleable.SlideDrawer_mainContent, -1).inflateLayout() //User content layout
-    private val mDrawerView = viewCreator.createDrawerView()
     private var drawerView: View? = mDrawerView.view
-    private var menuRecycler: RecyclerView? = null //Drawer recycler to display menu items
+    private var menuRecycler: RecyclerView? = mDrawerView.findView(recyclerViewId) //Drawer recycler to display menu items
+    private var drawerTitleTextView: TextView? = mDrawerView.findView(drawerTitleTextViewId)
+    private var closeIcon: ImageView? = mDrawerView.findView(closeButtonViewId)
+    private var drawerRoot: LinearLayout? = mDrawerView.findView(drawerRootViewId)
 
     /*
     Animation
@@ -112,7 +114,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         drawerView?.apply {
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         }
-        menuRecycler = mDrawerView.view.findViewById(mDrawerView.ids[recyclerViewId] ?: -1)
+
         addView(drawerView)
 
         if (contentView == null) contentView = ConstraintLayout(context).apply {
@@ -123,16 +125,13 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
             layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
             isClickable = true
             isFocusable = true
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                this.elevation = 16f
-            }
+            elevation = 16f
         }
 
         contentWrapper.addView(contentView)
         addView(contentWrapper)
 
         cfg = Config(context)
-        theme = Theme()
         contentWrapper.setBackgroundColor(theme.drawerBackgroundColor)
 
         closeButtonScaleShowAnimator = ScaleAnimation(cfg.closeButtonScaleFrom,
@@ -164,8 +163,9 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
 
         hideCloseButton()
         hideMenuList()
+        theme.drawerTitle = "Menu"
 
-        theme.closeIcon?.setOnClickListener {
+        closeIcon?.setOnClickListener {
             close()
         }
     }
@@ -182,7 +182,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
      */
 
     operator fun invoke(body: Theme.() -> Unit, slideDrawer: SlideDrawer.() -> Unit) {
-        theme?.let { body(it) }
+        theme.let { body(it) }
         slideDrawer(this)
     }
 
@@ -232,13 +232,13 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
 
     private fun showCloseButton() {
         closeButtonScaleShowAnimator?.let {
-            theme?.closeIcon?.startAnimation(it)
+            closeIcon?.startAnimation(it)
         }
     }
 
     private fun hideCloseButton() {
         closeButtonScaleHideAnimator?.let {
-            theme?.closeIcon?.startAnimation(it)
+            closeIcon?.startAnimation(it)
         }
     }
 
@@ -277,6 +277,10 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         this.menuItemsClickListener = menuItemsClickListener
     }
 
+    fun setDrawerTitle(title: String) {
+        theme.drawerTitle = title
+    }
+
     /*
     Private methods
      */
@@ -286,7 +290,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
             menuAdapter = MenuAdapter(items, globalMenuTheme ?: GlobalMenuTheme())
         menuRecycler?.apply {
             val lm = LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false)
-            theme?.apply {
+            theme.apply {
                 if (itemsDividerEnabled) {
                     val divider = ItemDivider(lm.orientation, menuItemsDividerColor).getDivider()
                     addItemDecoration(divider)
@@ -330,13 +334,28 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         return this
     }
 
+    private fun <T : View> CreatedView.findView(id: String) = this.view.findViewById<T>(ids[id] ?: -1)
+
+    private fun Int.dp() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP,
+            toFloat(),
+            context.resources.displayMetrics
+    ).toInt()
+
+    private fun Int.sp() = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP,
+            toFloat(),
+            context.resources.displayMetrics
+    ).toInt()
+
+
     /*
     Menu list
      */
     private inner class MenuAdapter(private val items: ArrayList<DrawerMenuItem>, private val globalMenuTheme: GlobalMenuTheme) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         init {
-            items.firstOrNull()?.selected = theme?.selectableMenuItems == true
+            items.firstOrNull()?.selected = theme.selectableMenuItems == true
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -349,7 +368,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
             (holder as? HolderBinder)?.bind(position)
         }
 
-        private inner class MenuItemHolder(private val createdView: CreatedView) : RecyclerView.ViewHolder(createdView.view), HolderBinder {
+        private inner class MenuItemHolder(createdView: CreatedView) : RecyclerView.ViewHolder(createdView.view), HolderBinder {
 
             private val menuItem = createdView.view
 
@@ -372,7 +391,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                         var itemBackgroundColor = backgroundColor?.parseColor()
                                 ?: globalMenuTheme.backgroundColor.parseColor()
 
-                        if (theme?.selectableMenuItems == true && backgroundColor == null)
+                        if (theme.selectableMenuItems && backgroundColor == null)
                             itemBackgroundColor = theme.drawerBackgroundColor
 
                         val colors = intArrayOf(itemBackgroundColor,
@@ -409,7 +428,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                         // root?.backgroundTintList = itemSelectStateList
 
                         setOnClickListener {
-                            if (theme?.selectableMenuItems == true)
+                            if (theme.selectableMenuItems == true)
                                 selectItem(position)
                             menuItemsClickListener?.onClick(position, drawerMenuItem)
                             if (cfg.closeAfterItemClick)
@@ -477,11 +496,11 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
      */
     inner class Theme {
 
-        var closeIcon: ImageView? = mDrawerView.view.findViewById(mDrawerView.ids[closeButtonViewId]
-                ?: -1)
-        private var drawerRoot = mDrawerView.view.findViewById<LinearLayout>(mDrawerView.ids[drawerRootViewId]
-                ?: -1)
-
+        var drawerTitle = ""
+            set(value) {
+                field = value
+                drawerTitleTextView?.text = value
+            }
         var itemsDividerEnabled = true
         var menuItemIconEnabled = false
         var selectableMenuItems = true
@@ -534,13 +553,14 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
             var closeButtonId = -1
             var recyclerId = -1
             var drawerRootId = -1
+            var drawerTitleId = -1
 
             val root = LinearLayout(context).apply {
                 drawerRootId = View.generateViewId()
                 id = drawerRootId
                 orientation = LinearLayout.VERTICAL
                 layoutParams = defaultParams
-                setBackgroundColor(theme?.drawerBackgroundColor
+                setBackgroundColor(theme.drawerBackgroundColor
                         ?: android.R.color.white.parseColor())
             }
 
@@ -563,6 +583,20 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                 }
 
                 addView(imageView, 0)
+
+                val titleTextView = TextView(context).apply {
+                    drawerTitleId = ID()
+                    id = drawerTitleId
+                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+                    setTextColor(theme.closeIconColor)
+                    layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                        setPadding(16, 16, 16, 16)
+                        addRule(RelativeLayout.ALIGN_PARENT_TOP)
+                        addRule(RelativeLayout.CENTER_HORIZONTAL)
+                    }
+                }
+
+                addView(titleTextView, 1)
             }
 
             val content = LinearLayout(context).apply {
@@ -582,13 +616,15 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                 addView(recyclerView, 0)
                 addView(view, 1)
             }
+
             root.addView(header, 0)
             root.addView(content, 1)
 
             val idsMap = mapOf(
                     recyclerViewId to recyclerId,
                     closeButtonViewId to closeButtonId,
-                    drawerRootViewId to drawerRootId
+                    drawerRootViewId to drawerRootId,
+                    drawerTitleTextViewId to drawerTitleId
             )
 
             return CreatedView(root, idsMap)
@@ -609,7 +645,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                     setPadding(8, 8, 8, 8)
                 }
                 val iconWrapper = FrameLayout(context).apply {
-                    visibility = if (theme?.menuItemIconEnabled == true)
+                    visibility = if (theme.menuItemIconEnabled)
                         View.VISIBLE
                     else View.GONE
                     layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT).apply {
@@ -676,17 +712,6 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
 
         private fun ID() = View.generateViewId()
 
-        fun Int.dp() = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                toFloat(),
-                context.resources.displayMetrics
-        ).toInt()
-
-        fun Int.sp() = TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_SP,
-                toFloat(),
-                context.resources.displayMetrics
-        ).toInt()
     }
 
     private data class CreatedView(val view: View,
