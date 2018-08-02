@@ -12,8 +12,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         slideDrawer({
-            drawerBackgroundColor = R.color.colorPrimary
-            closeIconColor = android.R.color.white
             itemsDividerEnabled = true
         }, {
 
@@ -33,7 +31,7 @@ class MainActivity : AppCompatActivity() {
                 add(SlideDrawer.DrawerMenuItem("element 9", "subtitle 9"))
                 add(SlideDrawer.DrawerMenuItem("element 10", "subtitle 10"))
                 add(SlideDrawer.DrawerMenuItem("element 11", "subtitle 11"))
-            }, GlobalMenuTheme(titleColor = android.R.color.holo_purple, subtitleColor = android.R.color.white))
+            })
 
             setMenuItemClickListener(object : SlideDrawer.MenuItemsClickListener {
                 override fun onClick(position: Int, drawerMenuItem: SlideDrawer.DrawerMenuItem) {

@@ -126,14 +126,14 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 this.elevation = 16f
             }
-            setBackgroundColor(android.R.color.white.parseColor())
         }
 
         contentWrapper.addView(contentView)
         addView(contentWrapper)
 
         cfg = Config(context)
-        theme = context?.let { Theme() }
+        theme = Theme()
+        contentWrapper.setBackgroundColor(theme.drawerBackgroundColor)
 
         closeButtonScaleShowAnimator = ScaleAnimation(cfg.closeButtonScaleFrom,
                 cfg.closeButtonScaleTo,
@@ -165,7 +165,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         hideCloseButton()
         hideMenuList()
 
-        theme?.closeIcon?.setOnClickListener {
+        theme.closeIcon?.setOnClickListener {
             close()
         }
     }
@@ -352,7 +352,6 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         private inner class MenuItemHolder(private val createdView: CreatedView) : RecyclerView.ViewHolder(createdView.view), HolderBinder {
 
             private val menuItem = createdView.view
-            private var previousSelected = -1
 
             private val itemIconImageView: ImageView? = menuItem.findViewById(createdView.ids[itemIconViewId]
                     ?: -1)
@@ -370,8 +369,13 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                 menuItem.apply {
                     drawerMenuItem.apply {
 
-                        val colors = intArrayOf(backgroundColor?.parseColor()
-                                ?: globalMenuTheme.backgroundColor.parseColor(),
+                        var itemBackgroundColor = backgroundColor?.parseColor()
+                                ?: globalMenuTheme.backgroundColor.parseColor()
+
+                        if (theme?.selectableMenuItems == true && backgroundColor == null)
+                            itemBackgroundColor = theme.drawerBackgroundColor
+
+                        val colors = intArrayOf(itemBackgroundColor,
                                 titleColor?.parseColor()
                                         ?: globalMenuTheme.titleColor.parseColor())
 
@@ -438,7 +442,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
 
     open inner class GlobalMenuTheme(var titleColor: Int = android.R.color.black,
                                      val subtitleColor: Int = android.R.color.black,
-                                     var backgroundColor: Int = R.color.colorPrimary) {
+                                     var backgroundColor: Int = android.R.color.transparent) {
         val menuItemIcon = viewCreator.createDefaultMenuItemIcon()
     }
 
@@ -473,7 +477,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
      */
     inner class Theme {
 
-        var closeIcon: ImageView? = mDrawerView.view.findViewById<ImageView>(mDrawerView.ids[closeButtonViewId]
+        var closeIcon: ImageView? = mDrawerView.view.findViewById(mDrawerView.ids[closeButtonViewId]
                 ?: -1)
         private var drawerRoot = mDrawerView.view.findViewById<LinearLayout>(mDrawerView.ids[drawerRootViewId]
                 ?: -1)
@@ -490,8 +494,8 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         @ColorInt
         var drawerBackgroundColor = defDrawerBackgroundColor
             set(value) {
-                field = value
-                drawerRoot?.setBackgroundColor(value.parseColor())
+                field = value.parseColor()
+                drawerRoot?.setBackgroundColor(field)
             }
 
         @ColorInt
@@ -536,6 +540,8 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                 id = drawerRootId
                 orientation = LinearLayout.VERTICAL
                 layoutParams = defaultParams
+                setBackgroundColor(theme?.drawerBackgroundColor
+                        ?: android.R.color.white.parseColor())
             }
 
             val header = RelativeLayout(context).apply {
