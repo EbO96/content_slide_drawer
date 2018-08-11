@@ -23,7 +23,7 @@ class MainActivity : AppCompatActivity() {
 
             setMenu(arrayListOf<SlideDrawer.DrawerMenuItem>().apply {
                 add(SlideDrawer.DrawerMenuItem("element 1", "subtitle 1"))
-                add(SlideDrawer.DrawerMenuItem("element 2", "subtitle 2"))
+                add(SlideDrawer.DrawerMenuItem("element 2", ""))
                 add(SlideDrawer.DrawerMenuItem("element 3", "subtitle 3"))
                 add(SlideDrawer.DrawerMenuItem("element 4", "subtitle 4"))
                 add(SlideDrawer.DrawerMenuItem("element 5", "subtitle 5"))

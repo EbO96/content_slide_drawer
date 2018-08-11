@@ -435,14 +435,27 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                                 }
                             }
                         }
+                        subtitleTextView?.apply {
+                            visibility = if (subtitle.isNullOrBlank())
+                                View.GONE
+                            else {
+                                text = subtitle
+                                setTextColor(subtitleColorStateList)
+                                View.VISIBLE
+                            }
+                        }
+
                         titleTextView?.apply {
                             text = title
                             setTextColor(titleColorStateList)
-                        }
-                        subtitleTextView?.apply {
-                            text = subtitle
-                            setTextColor(subtitleColorStateList)
 
+                            (layoutParams as? LinearLayout.LayoutParams)?.apply {
+                                if (subtitleTextView?.visibility == View.GONE) {
+                                    setPadding(8.dp(), 8.dp(), 0, 8.dp())
+                                } else {
+                                    setPadding(8.dp(), 0, 0, 0)
+                                }
+                            }
                         }
 
                         titleTextView?.isSelected = selected
@@ -515,8 +528,8 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     Theme
      */
     inner class Theme {
-
         var drawerTitle = ""
+
             set(value) {
                 field = value
                 drawerTitleTextView?.text = value
