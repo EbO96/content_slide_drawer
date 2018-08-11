@@ -696,6 +696,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 18f)
                         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                             weight = 1f
+                            setPadding(8.dp(), 0, 0, 0)
                         }
                     }
                     val subtitleTextView = TextView(context).apply {
@@ -703,6 +704,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
                         id = subtitleId
                         setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                         layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+                            setPadding(8.dp(), 0, 0, 0)
                             weight = 1f
                             topMargin = 8
                         }
