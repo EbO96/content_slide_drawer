@@ -162,7 +162,6 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         hideMenuAnimation = ObjectAnimator.ofFloat(menuRecycler, "alpha", 1f, 0f).applyDefaultConfig()
 
         hideCloseButton()
-        hideMenuList()
         theme.drawerTitle = "Menu"
 
         closeIcon?.setOnClickListener {
@@ -251,23 +250,25 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
     }
 
     private fun showMenuList() {
-        showMenuAnimation?.apply {
-            View.INVISIBLE
-            endAnimationListener {
-                View.VISIBLE
+        if (theme.menuShowHideAnimation)
+            showMenuAnimation?.apply {
+                View.INVISIBLE
+                endAnimationListener {
+                    View.VISIBLE
+                }
+                start()
             }
-            start()
-        }
     }
 
     private fun hideMenuList() {
-        hideMenuAnimation?.apply {
-            View.VISIBLE
-            endAnimationListener {
-                View.INVISIBLE
+        if (theme.menuShowHideAnimation)
+            hideMenuAnimation?.apply {
+                View.VISIBLE
+                endAnimationListener {
+                    View.INVISIBLE
+                }
+                start()
             }
-            start()
-        }
     }
 
     fun getContentView() = contentView
@@ -523,6 +524,7 @@ class SlideDrawer(context: Context?, attrs: AttributeSet?) : FrameLayout(context
         var itemsDividerEnabled = true
         var menuItemIconEnabled = false
         var selectableMenuItems = true
+        var menuShowHideAnimation = true
         var menuItemsDividerColor = Color.parseColor("#5578909C")
             set(value) {
                 field = value.parseColor()

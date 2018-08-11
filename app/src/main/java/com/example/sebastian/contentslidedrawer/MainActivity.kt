@@ -13,6 +13,7 @@ class MainActivity : AppCompatActivity() {
 
         slideDrawer({
             itemsDividerEnabled = true
+            menuShowHideAnimation = false
             drawerTitle = "Spis treści"
         }, {
 
