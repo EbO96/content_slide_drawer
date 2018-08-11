@@ -21,12 +21,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             setMenu(arrayListOf<SlideDrawer.DrawerMenuItem>().apply {
-                add(SlideDrawer.DrawerMenuItem("element 1", "subtitle 1", icon = R.drawable.ic_close_black_24dp))
+                add(SlideDrawer.DrawerMenuItem("element 1", "subtitle 1"))
                 add(SlideDrawer.DrawerMenuItem("element 2", "subtitle 2"))
                 add(SlideDrawer.DrawerMenuItem("element 3", "subtitle 3"))
                 add(SlideDrawer.DrawerMenuItem("element 4", "subtitle 4"))
                 add(SlideDrawer.DrawerMenuItem("element 5", "subtitle 5"))
-            })
+            }, GlobalMenuTheme(titleColorSelected = R.color.colorAccent, subtitleColorSelected = R.color.colorAccent))
 
             setMenuItemClickListener(object : SlideDrawer.MenuItemsClickListener {
                 override fun onClick(position: Int, drawerMenuItem: SlideDrawer.DrawerMenuItem) {
